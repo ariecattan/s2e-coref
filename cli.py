@@ -16,63 +16,60 @@ def parse_args():
     )
     parser.add_argument(
         "--model_name_or_path",
-        default="allenai/longformer-base-4096",
+        default="models",
         type=str,
         # required=True,
         help="Path to pretrained model or model identifier from huggingface.co/models",
     )
     parser.add_argument(
         "--output_dir",
-        default=None,
+        default='outputs',
         type=str,
-        required=True,
         help="The output directory where the model checkpoints and predictions will be written.",
     )
     parser.add_argument(
         "--train_file_cache",
-        default=None,
+        default='data/train.english.4096.pkl',
         type=str,
-        required=True,
         help="The output directory where the datasets will be written and read from.",
     )
     parser.add_argument(
         "--predict_file_cache",
-        default=None,
+        default='data/test.english.4096.pkl',
         type=str,
-        required=True,
         help="The output directory where the datasets will be written and read from.",
     )
 
     # Other parameters
     parser.add_argument(
         "--train_file",
-        default=None,
+        default='data/train.english.jsonlines',
         type=str,
         help="The input training file. If a data dir is specified, will look for the file there"
              + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
     )
     parser.add_argument(
         "--predict_file",
-        default=None,
+        default='data/test.english.jsonlines',
         type=str,
         help="The input evaluation file. If a data dir is specified, will look for the file there"
              + "If no data dir or train/predict files are specified, will run with tensorflow_datasets.",
     )
     parser.add_argument(
-        "--config_name", default="allenai/longformer-base-4096", type=str, help="Pretrained config name or path if not the same as model_name"
+        "--config_name", default="allenai/longformer-large-4096", type=str, help="Pretrained config name or path if not the same as model_name"
     )
     parser.add_argument("--tokenizer_name",
-                        default="allenai/longformer-base-4096",
+                        default="allenai/longformer-large-4096",
                         type=str,
                         help="Pretrained tokenizer name or path if not the same as model_name")
     parser.add_argument("--cache_dir",
-                        default=None,
+                        default='cache',
                         type=str,
                         help="Where do you want to store the pre-trained models downloaded from s3")
     parser.add_argument("--max_seq_length", default=-1, type=int)
 
     parser.add_argument("--do_train", action="store_true", help="Whether to run training.")
-    parser.add_argument("--do_eval", action="store_true", help="Whether to run eval on the dev set.")
+    parser.add_argument("--do_eval", action="store_true", help="Whether to run eval on the dev set.", default=True)
     parser.add_argument("--do_lower_case", action="store_true", help="Set this flag if you are using an uncased model.")
 
     parser.add_argument("--nonfreeze_params", default=None, type=str,
@@ -133,9 +130,9 @@ def parse_args():
 
     parser.add_argument("--save_if_best", action="store_true")
     parser.add_argument("--batch_size_1", action="store_true")
-    parser.add_argument("--tensorboard_dir", type=str, required=True)
+    parser.add_argument("--tensorboard_dir", type=str, default='outputs')
 
-    parser.add_argument("--conll_path_for_eval", type=str, default=None)
-
+    parser.add_argument("--conll_path_for_eval", type=str, default='data/test.english.v4_gold_conll')
+    parser.add_argument("--input_file", type=str, default="data/new_test.jsonl")
     args = parser.parse_args()
     return args

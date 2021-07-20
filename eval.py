@@ -10,7 +10,7 @@ from data import get_dataset
 from metrics import CorefEvaluator, MentionEvaluator
 from utils import extract_clusters, extract_mentions_to_predicted_clusters_from_clusters, extract_clusters_for_decode
 from conll import evaluate_conll
-
+from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 
@@ -41,7 +41,7 @@ class Evaluator:
         losses = defaultdict(list)
         doc_to_prediction = {}
         doc_to_subtoken_map = {}
-        for (doc_key, subtoken_maps), batch in eval_dataloader:
+        for (doc_key, subtoken_maps), batch in tqdm(eval_dataloader):
 
             batch = tuple(tensor.to(self.args.device) for tensor in batch)
             input_ids, attention_mask, gold_clusters = batch
