@@ -1,5 +1,20 @@
 # Coreference Resolution without Span Representations
 
+***************************************************************
+
+
+This fork contains a script to use the s2e-coref model on custom inputs (please just intall [pytokenizations](https://github.com/explosion/tokenizations)):
+
+```
+python predict.py --input_file <path-to-jsonl-file>
+```
+
+Input files should be in jsonl where each row includes at least "tokens" (a tokenized document). The script will add "clusters" in the file.
+
+
+***************************************************************
+
+
 This repository contains the code implementation from the paper ["Coreference Resolution without Span Representations"](https://arxiv.org/abs/2101.00434).
 
 - [Set up](#set-up)
