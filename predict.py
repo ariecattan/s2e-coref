@@ -29,16 +29,37 @@ class Inference:
         with jsonlines.open(self.input_file, 'r') as f:
             self.data = [doc for doc in f]
 
+    def long2origin(self,doc):
+        long2origin = []
+        #long_doc_tokens = []
+        tokens = doc['tokens']
+        for i in range(len(tokens)):
+            if i == 0 or tokens[i][0] == '’':
+                token = tokens[i]
+            else:
+                token = ' ' + tokens[i]
+            longformer_token = self.tokenizer.tokenize(token)
+            #long_doc_tokens.extend(longformer_token)
+            long2origin += [i]*len(longformer_token)
+        return long2origin
+
+    def doc_from_tokens(self, doc):
+        document = ' '.join(doc['tokens'])
+        document = document.replace(' ’', '’')
+        return document
+
 
     def predict(self):
         logger.info(f"***** Running inference on {len(self.data)} documents *****")
         for i, doc in enumerate(tqdm(self.data)):
-            longformer_tokens = self.tokenizer.tokenize(' '.join(doc['tokens']))
-            _, long2origin = tokenizations.get_alignments(doc['tokens'], longformer_tokens)
+
+            longformer_tokens = self.tokenizer.tokenize(self.doc_from_tokens(doc))
+            _, long2origin_org = tokenizations.get_alignments(doc['tokens'], longformer_tokens)
+            long2origin = self.long2origin(doc)
             input_ids = self.tokenizer.encode(longformer_tokens, return_tensors='pt').to(self.args.device)
             attention_mask = torch.ones(input_ids.shape).to(self.args.device)
-            long2origin = [0] + list(chain.from_iterable(long2origin)) 
-            long2origin.append(long2origin[-1])
+            # long2origin = [0] + list(chain.from_iterable(long2origin))
+            # long2origin.append(long2origin[-1])
 
 
             with torch.no_grad():
