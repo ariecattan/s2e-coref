@@ -52,39 +52,43 @@ class Inference:
     def predict(self):
 
         logger.info(f"***** Running inference on {len(self.data)} documents *****")
+
         for i, doc in enumerate(tqdm(self.data)):
 
             if 'clusters' in doc.keys():
                 continue
+            try:
+                longformer_tokens = self.tokenizer.tokenize(self.doc_from_tokens(doc))
+                _, long2origin_org = tokenizations.get_alignments(doc['tokens'], longformer_tokens)
+                long2origin, long_doc_tokens= self.long2origin(doc)
+                assert longformer_tokens == long_doc_tokens, 'longform_tokens different from long_doc_tokens'
+                assert len(long2origin) == len(longformer_tokens),  'long2origin length differnet of longformer_tokens length'
+                input_ids = self.tokenizer.encode(longformer_tokens[:4094], return_tensors='pt').to(self.args.device)
+                attention_mask = torch.ones(input_ids.shape).to(self.args.device)
+                long2origin = [0] + long2origin
+                long2origin.append(long2origin[-1])
 
-            longformer_tokens = self.tokenizer.tokenize(self.doc_from_tokens(doc))
-            _, long2origin_org = tokenizations.get_alignments(doc['tokens'], longformer_tokens)
-            long2origin, long_doc_tokens= self.long2origin(doc)
-            assert longformer_tokens == long_doc_tokens, 'longform_tokens different from long_doc_tokens'
-            assert len(long2origin) == len(longformer_tokens),  'long2origin length differnet of longformer_tokens length'
-            input_ids = self.tokenizer.encode(longformer_tokens[:4094], return_tensors='pt').to(self.args.device)
-            attention_mask = torch.ones(input_ids.shape).to(self.args.device)
-            long2origin = [0] + long2origin
-            long2origin.append(long2origin[-1])
+                with torch.no_grad():
+                    outputs = self.model(input_ids=input_ids,
+                                    attention_mask=attention_mask,
+                                    return_all_outputs=True)
 
-            with torch.no_grad():
-                outputs = self.model(input_ids=input_ids,
-                                attention_mask=attention_mask,
-                                return_all_outputs=True)
-                   
-            outputs_np = tuple(tensor.cpu().numpy() for tensor in outputs)
-            for starts, end_offsets, coref_logits, _ in zip(*outputs_np):
-                max_antecedents = np.argmax(coref_logits, axis=1).tolist()
-                mention_to_antecedent = {((int(start), int(end)), (int(starts[max_antecedent]), int(end_offsets[max_antecedent]))) for start, end, max_antecedent in
-                                         zip(starts, end_offsets, max_antecedents) if max_antecedent < len(starts)}
+                outputs_np = tuple(tensor.cpu().numpy() for tensor in outputs)
+                for starts, end_offsets, coref_logits, _ in zip(*outputs_np):
+                    max_antecedents = np.argmax(coref_logits, axis=1).tolist()
+                    mention_to_antecedent = {((int(start), int(end)), (int(starts[max_antecedent]), int(end_offsets[max_antecedent]))) for start, end, max_antecedent in
+                                             zip(starts, end_offsets, max_antecedents) if max_antecedent < len(starts)}
 
-                predicted_clusters, _ = extract_clusters_for_decode(mention_to_antecedent)
-                origin_clusters = [[(long2origin[start], long2origin[end]) for start, end in cluster] \
-                                    for cluster in predicted_clusters]
-                self.data[i]['clusters'] = origin_clusters
+                    predicted_clusters, _ = extract_clusters_for_decode(mention_to_antecedent)
+                    origin_clusters = [[(long2origin[start], long2origin[end]) for start, end in cluster] \
+                                        for cluster in predicted_clusters]
+                    self.data[i]['clusters'] = origin_clusters
+            except:
+                continue
 
         with jsonlines.open(self.input_file, 'w') as f:
             f.write_all(self.data)
+
 
 
 def main():
