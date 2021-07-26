@@ -31,7 +31,7 @@ class Inference:
 
     def long2origin(self,doc):
         long2origin = []
-        #long_doc_tokens = []
+        long_doc_tokens = []
         tokens = doc['tokens']
         for i in range(len(tokens)):
             if i == 0 or tokens[i][0] == '’':
@@ -39,9 +39,9 @@ class Inference:
             else:
                 token = ' ' + tokens[i]
             longformer_token = self.tokenizer.tokenize(token)
-            #long_doc_tokens.extend(longformer_token)
+            long_doc_tokens.extend(longformer_token)
             long2origin += [i]*len(longformer_token)
-        return long2origin
+        return long2origin, long_doc_tokens
 
     def doc_from_tokens(self, doc):
         document = ' '.join(doc['tokens'])
@@ -50,17 +50,22 @@ class Inference:
 
 
     def predict(self):
+
         logger.info(f"***** Running inference on {len(self.data)} documents *****")
         for i, doc in enumerate(tqdm(self.data)):
 
+            if 'clusters' in doc.keys():
+                continue
+
             longformer_tokens = self.tokenizer.tokenize(self.doc_from_tokens(doc))
             _, long2origin_org = tokenizations.get_alignments(doc['tokens'], longformer_tokens)
-            long2origin = self.long2origin(doc)
-            input_ids = self.tokenizer.encode(longformer_tokens, return_tensors='pt').to(self.args.device)
+            long2origin, long_doc_tokens= self.long2origin(doc)
+            assert longformer_tokens == long_doc_tokens, 'longform_tokens different from long_doc_tokens'
+            assert len(long2origin) == len(longformer_tokens),  'long2origin length differnet of longformer_tokens length'
+            input_ids = self.tokenizer.encode(longformer_tokens[:4094], return_tensors='pt').to(self.args.device)
             attention_mask = torch.ones(input_ids.shape).to(self.args.device)
-            # long2origin = [0] + list(chain.from_iterable(long2origin))
-            # long2origin.append(long2origin[-1])
-
+            long2origin = [0] + long2origin
+            long2origin.append(long2origin[-1])
 
             with torch.no_grad():
                 outputs = self.model(input_ids=input_ids,
@@ -76,7 +81,7 @@ class Inference:
                 predicted_clusters, _ = extract_clusters_for_decode(mention_to_antecedent)
                 origin_clusters = [[(long2origin[start], long2origin[end]) for start, end in cluster] \
                                     for cluster in predicted_clusters]
-                self.data[i]['clusters'] = origin_clusters        
+                self.data[i]['clusters'] = origin_clusters
 
         with jsonlines.open(self.input_file, 'w') as f:
             f.write_all(self.data)
