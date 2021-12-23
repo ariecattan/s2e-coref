@@ -39,6 +39,12 @@ def parse_args():
         type=str,
         help="The output directory where the datasets will be written and read from.",
     )
+    parser.add_argument(
+        "--gpu",
+        default="1",
+        type=str,
+        help="gpu num",
+    )
 
     # Other parameters
     parser.add_argument(

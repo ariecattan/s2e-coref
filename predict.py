@@ -93,7 +93,7 @@ class Inference:
 
 def main():
     args = parse_args()
-    args.device = "cuda" if torch.cuda.is_available() else 'cpu'
+    args.device = "cuda:{}".format(args.gpu) if torch.cuda.is_available() else 'cpu'
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
                         level=logging.INFO if args.local_rank in [-1, 0] else logging.WARN)
