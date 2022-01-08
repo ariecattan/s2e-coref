@@ -3,13 +3,17 @@
 ***************************************************************
 
 
-This fork contains a script to use the s2e-coref model on custom inputs (please just intall [pytokenizations](https://github.com/explosion/tokenizations)):
+This fork contains a script to use the s2e-coref model on custom inputs:
 
 ```
 python predict.py --input_file <path-to-jsonl-file>
 ```
 
-Input files should be in jsonl where each row includes at least "tokens" (a tokenized document). The script will add "clusters" in the file.
+Input files should be in jsonl where each row includes at least "tokens" (a tokenized document), as shown below. The script will add "clusters" in each row.
+
+```
+{"tokens": ["The", "doctor", "asked", "the", "nurse", "to", "help", "her", "with", "the", "operation", "."]}
+```
 
 
 ***************************************************************
